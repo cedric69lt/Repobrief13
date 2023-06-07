@@ -10,7 +10,7 @@ sudo sh get-docker.sh
 sudo docker run -d -p 80:80 --name conteneurnginx cedric69/nginx_umage:latest
 
 
-#Installing Docker
+#Installing Docker deuxieme méthode
 #sudo apt-get remove docker docker-engine docker.io
 #sudo apt-get update
 #sudo apt-get install -y \
