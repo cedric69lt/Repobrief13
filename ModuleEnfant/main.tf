@@ -1,12 +1,12 @@
 resource "azurerm_resource_group" "webserver" {
-   name = "nginx-server-cedric-${var.environment}"
-   location = var.location
+   name = "nginx-server-cedric-terraform"
+   location = "francecentral"
 }
 
 resource "azurerm_network_security_group" "allowedports" {
    name = "allowedports"
    resource_group_name = azurerm_resource_group.webserver.name
-   location = azurerm_resource_group.webserver.location
+   location = "francecentral"
   
    security_rule {
        name = "http"
@@ -45,6 +45,22 @@ resource "azurerm_network_security_group" "allowedports" {
    }
 }
 
+resource "azurerm_virtual_network" "webserver-net" {
+  name                = "webserver-net"
+  address_space       = ["10.0.0.0/16"]
+  location            = azurerm_resource_group.webserver.location
+  resource_group_name = azurerm_resource_group.webserver.name
+}
+
+resource "azurerm_subnet" "webserver-subnet" {
+  name                 = "subnet01"
+  resource_group_name  = azurerm_resource_group.webserver.name
+  virtual_network_name = azurerm_virtual_network.webserver-net.name
+  address_prefixes       = ["10.0.1.0/24"]
+
+  private_link_service_network_policies_enabled = false
+}
+
 resource "azurerm_subnet_network_security_group_association" "mgmt-nsg-association" {
     subnet_id = azurerm_subnet.webserver-subnet.id
     network_security_group_id = azurerm_network_security_group.allowedports.id
@@ -53,12 +69,12 @@ resource "azurerm_subnet_network_security_group_association" "mgmt-nsg-associati
 
 resource "azurerm_public_ip" "webserver_public_ip" {
    name = "webserver_public_ip"
-   location = var.location
+   location = "francecentral"
    resource_group_name = azurerm_resource_group.webserver.name
    allocation_method = "Dynamic"
 
    tags = {
-       environment = var.environment
+       environment = "default"
        costcenter = "it"
    }
 
@@ -85,7 +101,6 @@ resource "azurerm_linux_virtual_machine" "nginx" {
    name = "nginx-webserver"
    resource_group_name = azurerm_resource_group.webserver.name
    location = azurerm_resource_group.webserver.location
-   custom_data = base64encode(file("init-script.sh"))
    network_interface_ids = [
        azurerm_network_interface.webserver.id,
    ]
@@ -110,7 +125,7 @@ resource "azurerm_linux_virtual_machine" "nginx" {
    }
 
    tags = {
-       environment = var.environment
+       environment = "default"
        costcenter = "it"
    }
 
